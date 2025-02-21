@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOE DATA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+        select {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px;
+            background: blue;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: darkblue;
+        }
+    </style>
+</head>
+<body>
+    <h1>Joe data</h1>
+    <textarea id="jsonInput" placeholder='Enter JSON input'></textarea>
+    <button onclick="handleSubmit()">Submit</button>
+    <p id="error" style="color: red;"></p>
+    <select id="filters" multiple>
+        <option value="alphabets">Alphabets</option>
+        <option value="numbers">Numbers</option>
+        <option value="highest_alphabet">Highest Alphabet</option>
+    </select>
+    <div id="response"></div>
+    
+    <script>
+        async function handleSubmit() {
+            const jsonInput = document.getElementById("jsonInput").value
+                .replace(/“|”/g, '\"'); // Convert curly quotes to straight quotes
+
+            const errorElement = document.getElementById("error");
+            const responseElement = document.getElementById("response");
+
+            try {
+                const parsedData = JSON.parse(jsonInput);
+                if (!parsedData.data || !Array.isArray(parsedData.data)) {
+                    throw new Error("Invalid JSON format. Expected key: 'data' with an array.");
+                }
+
+                const response = await fetch("http://localhost:3000/bfhl", { // Change this if backend is deployed
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(parsedData),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                errorElement.textContent = "";
+                renderResponse(result);
+            } catch (err) {
+                errorElement.textContent = err.message;
+            }
+        }
+
+        function renderResponse(responseData) {
+            const selectedFilters = Array.from(document.getElementById("filters").selectedOptions).map(opt => opt.value);
+            let output = "";
+            if (selectedFilters.includes("alphabets")) {
+                output += `<p>Alphabets: ${JSON.stringify(responseData.alphabets)}</p>`;
+            }
+            if (selectedFilters.includes("numbers")) {
+                output += `<p>Numbers: ${JSON.stringify(responseData.numbers)}</p>`;
+            }
+            if (selectedFilters.includes("highest_alphabet")) {
+                output += `<p>Highest Alphabet: ${JSON.stringify(responseData.highest_alphabet)}</p>`;
+            }
+            document.getElementById("response").innerHTML = output;
+        }
+    </script>
+</body>
+</html>
